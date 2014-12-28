@@ -9,7 +9,6 @@ using System.Linq;
 using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,14 +68,13 @@ namespace NetAtmo.NET
         try
         {
           response = Http.Post("https://api.netatmo.net/oauth2/token", new NameValueCollection() {
-
-        { "grant_type", "password" },
-        { "client_id", tbClientID.Text },
-        { "client_secret", tbClientSecret.Text },
-        { "username", tbClientUsername.Text },
-        { "password", tbClientPassword.Text },
-        { "scope", "read_station read_thermostat write_thermostat" }
-      });
+            { "grant_type", "password" },
+            { "client_id", tbClientID.Text },
+            { "client_secret", tbClientSecret.Text },
+            { "username", tbClientUsername.Text },
+            { "password", tbClientPassword.Text },
+            { "scope", "read_station read_thermostat write_thermostat" }}
+          );
         }
         catch (Exception e)
         {
@@ -104,7 +102,7 @@ namespace NetAtmo.NET
       }
       catch (Exception e)
       {
-        lvDebug.Items.Add("Error during access token retrieval");
+        lvDebug.Items.Add("Error during access token retrieval: " + e.Message);
       }
     }
 
@@ -145,7 +143,7 @@ namespace NetAtmo.NET
       catch (Exception e)
       {
         MessageBox.Show(e.Message);
-        lvDebug.Items.Add("Error during Device ID retrieval" + e.Message);
+        lvDebug.Items.Add("Error during Device ID retrieval: " + e.Message);
       }
     }
     private void getMeasurements()
@@ -185,7 +183,7 @@ namespace NetAtmo.NET
       }
       catch (Exception e)
       {
-        lvDebug.Items.Add("Error during measurement retrieval");
+        lvDebug.Items.Add("Error during measurement retrieval: " + e.Message);
       }
     }
 

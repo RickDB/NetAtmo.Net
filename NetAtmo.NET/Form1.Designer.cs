@@ -57,7 +57,7 @@
       this.lvDebug.Size = new System.Drawing.Size(527, 264);
       this.lvDebug.TabIndex = 0;
       this.lvDebug.UseCompatibleStateImageBehavior = false;
-      this.lvDebug.View = System.Windows.Forms.View.List;
+      this.lvDebug.View = System.Windows.Forms.View.Details;
       // 
       // chLogEntry
       // 
@@ -100,10 +100,10 @@
       this.lblClientPassword.TabIndex = 8;
       this.lblClientPassword.Text = "Password";
       // 
-      // btnTestAuth
+      // btnGetAuth
       // 
       this.btnGetAuth.Location = new System.Drawing.Point(343, 21);
-      this.btnGetAuth.Name = "btnTestAuth";
+      this.btnGetAuth.Name = "btnGetAuth";
       this.btnGetAuth.Size = new System.Drawing.Size(76, 43);
       this.btnGetAuth.TabIndex = 9;
       this.btnGetAuth.Text = "Get Auth";
