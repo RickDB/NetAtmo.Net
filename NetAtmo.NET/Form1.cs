@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Windows.Forms;
@@ -22,12 +23,24 @@ namespace NetAtmo.NET
     public static string ErrorOATHMessage = "";
     public static string AccessToken = "";
     public static string DeviceID = "";
+    public static string ModuleID = "";
+
+    private int measurementInterval = 60;
+    private bool measuring = true;
+    private bool measuringManualHalt = false;
+    private int reconnectTimes = 0;
 
     public Form1()
     {
       InitializeComponent();
       AccessToken = tbAccessToken.Text;
       DeviceID = tbDeviceID.Text;
+      measurementInterval = int.Parse(cbMeasurementsInterval.Text);
+
+      /*
+      Thread t = new Thread(startMeasuring);
+      t.IsBackground = true;
+      t.Start();*/
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -39,6 +52,7 @@ namespace NetAtmo.NET
     private void Form1_FormClosing(object sender, FormClosingEventArgs e)
     {
       Properties.Settings.Default.Save();
+      measuring = false;
     }
 
     /// <summary>
@@ -59,6 +73,19 @@ namespace NetAtmo.NET
       }
     }
 
+    private void startMeasuring()
+    {
+      while (measuring)
+      {
+        if (measuringManualHalt == false)
+        {
+          Form1 form = new Form1();
+          form.getMeasurements();
+        }
+
+        Thread.Sleep(measurementInterval * 1000);
+      }
+    }
     private void AuthenticateOATH()
     {
       try
@@ -122,27 +149,49 @@ namespace NetAtmo.NET
           }
           catch (Exception e)
           {
-            AuthenticateOATH();
-            getDeviceID();
+            if (reconnectTimes < 3)
+            {
+              reconnectTimes++;
+              AuthenticateOATH();
+              getDeviceID();
+            }
           }
         }
         else
         {
-          AuthenticateOATH();
-          getDeviceID();
+          if(reconnectTimes < 3)
+          {
+            reconnectTimes++;
+            AuthenticateOATH();
+            getDeviceID();
+          }
         }
-
+        reconnectTimes = 0;
         string responseDecoded = System.Text.Encoding.UTF8.GetString(response);
-        dynamic data = JsonConvert.DeserializeObject(responseDecoded);
-        var id = data.body.devices[0]._id;
 
-        DeviceID = (string)id;
+        dynamic data = JsonConvert.DeserializeObject(responseDecoded);
+        var deviceID = data.body.devices[0]._id;
+        var moduleID = data.body.modules[0]._id;
+        var altitude = data.body.devices[0].place.altitude;
+        var country = data.body.devices[0].place.country;
+        var latitude = data.body.devices[0].place.location[0];
+        var longitude = data.body.devices[0].place.location[1];
+        var timezone = data.body.devices[0].place.timezone;
+
+        DeviceID = (string)deviceID;
+        ModuleID = (string)moduleID;
         tbDeviceID.Text = DeviceID;
+        tbModuleID.Text = ModuleID;
+        tbAltitude.Text = (string)altitude;
+        tbCountry.Text = (string)country;
+        tbLatitude.Text = (string)latitude;
+        tbLongtitude.Text = (string)longitude;
+        tbTimeZone.Text = (string)timezone;
+
         lvDebug.Items.Add("Device ID: " + DeviceID);
       }
       catch (Exception e)
       {
-        MessageBox.Show(e.Message);
         lvDebug.Items.Add("Error during Device ID retrieval: " + e.Message);
       }
     }
@@ -150,21 +199,40 @@ namespace NetAtmo.NET
     {
       try
       {
+        var response = new byte[10000];
+        string measurementType = cbMeasureType.Text;
+
         if (string.IsNullOrEmpty(AccessToken))
         {
-          AuthenticateOATH();
+          if (reconnectTimes < 3)
+          {
+            reconnectTimes++;
+            AuthenticateOATH();
+          }
         }
 
         if (string.IsNullOrEmpty(DeviceID))
         {
-          getDeviceID();
+          if (reconnectTimes < 3)
+          {
+            reconnectTimes++;
+            getDeviceID();
+          }
         }
+        reconnectTimes = 0;
 
-        var response = new byte[10000];
         try
         {
           WebClient client = new WebClient();
-          string url = "http://api.netatmo.net/api/getmeasure?access_token=" + AccessToken + "&device_id=" + DeviceID + "&type=Temperature,Humidity&limit=1&date_end=last&scale=30min";
+          string url = "";
+          if (measurementType == "Remote")
+          {
+            url = "http://api.netatmo.net/api/getmeasure?access_token=" + AccessToken + "&device_id=" + DeviceID + "&module_id=" + ModuleID + "&type=Temperature,Humidity,Pressure,CO2&limit=1&date_end=last&scale=30min";
+          }
+          else if (measurementType == "Station")
+          {
+            url = "http://api.netatmo.net/api/getmeasure?access_token=" + AccessToken + "&device_id=" + DeviceID + "&type=Temperature,Humidity,Pressure,CO2&limit=1&date_end=last&scale=30min";
+          }
           response = client.DownloadData(url);
         }
         catch (Exception e)
@@ -176,15 +244,71 @@ namespace NetAtmo.NET
         string responseDecoded = System.Text.Encoding.UTF8.GetString(response);
         dynamic data = JsonConvert.DeserializeObject(responseDecoded);
 
-        var temperature = data.body[0].value[0][0]; // indoor temperature
-        var humidity = data.body[0].value[0][1]; // indoor humidity
-        lvDebug.Items.Add("Temperature: " + (string)temperature);
-        lvDebug.Items.Add("Humidity: " + (string)humidity);
+        string temperature = data.body[0].value[0][0]; // temperature
+        string humidity = data.body[0].value[0][1]; //  humidity
+        string pressure = data.body[0].value[0][2]; //  pressure
+        string CO2 = data.body[0].value[0][3]; //  CO2
+
+        lvDebug.Items.Add("Temperature: " + temperature);
+        lvDebug.Items.Add("Humidity: " + humidity);
+        lvDebug.Items.Add("Pressure: " + pressure);
+        lvDebug.Items.Add("CO2: " + CO2);
+
+        if (string.IsNullOrEmpty(temperature) == false)
+        {
+          outputToXML(temperature, humidity, pressure, CO2);
+        }
       }
       catch (Exception e)
       {
         lvDebug.Items.Add("Error during measurement retrieval: " + e.Message);
       }
+    }
+
+    //Should use proper XML formatter here to prevent input errors but for the time being this works.
+    private void outputToXML(string temperature, string humidity, string pressure, string C02)
+    {
+      string saveLocation = "WorldWeather_NetAtmo.xml";
+
+      StreamWriter sw = new StreamWriter(saveLocation);
+      sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+      sw.WriteLine("<data>");
+        sw.WriteLine("<provider>");
+          sw.WriteLine("<name>NetAtmo</name>");
+          sw.WriteLine("<version>1.0</version>");
+        sw.WriteLine("</provider>");
+        sw.WriteLine("<location>");
+          sw.WriteLine("<city></city>");
+          sw.WriteLine("<country>" + tbCountry.Text + "</country>");
+          sw.WriteLine("<region></region>");
+          sw.WriteLine("<postalcode></postalcode>");
+          sw.WriteLine("<longitude>" + tbLongtitude.Text + "</longitude>");
+          sw.WriteLine("<latitude>" + tbLatitude.Text + "</latitude>");
+          sw.WriteLine("<altitude>" + tbAltitude.Text + "</altitude>");
+          sw.WriteLine("<unit>SI</unit>");
+        sw.WriteLine("</location>");
+        sw.WriteLine("<current>");
+        sw.WriteLine("<date>" + DateTime.Now.ToShortDateString() + "</date>");
+          sw.WriteLine("<temperature>" + temperature + "</temperature>");
+          sw.WriteLine("<temperatureFeelsLike></temperatureFeelsLike>");
+          sw.WriteLine("<weatherCode></weatherCode>");
+          sw.WriteLine("<weatherDescription></weatherDescription>");
+          sw.WriteLine("<windSpeed></windSpeed>");
+          sw.WriteLine("<windDirectionDegree></windDirectionDegree>");
+          sw.WriteLine("<precipitation></precipitation>");
+          sw.WriteLine("<pressure>" + pressure + "</pressure>");
+          sw.WriteLine("<barometricPressure></barometricPressure>");
+          sw.WriteLine("<humidity>" + humidity + "</humidity>");
+          sw.WriteLine("<visibility></visibility>");
+          sw.WriteLine("<cloudCoverage></cloudCoverage>");
+          sw.WriteLine("<uvIndex></uvIndex>");
+        sw.WriteLine("</current>");
+        sw.WriteLine("<forecast>");
+        sw.WriteLine("</forecast>");
+      sw.WriteLine("</data>");
+      sw.Close();
+
+      lvDebug.Items.Add("Created XML file for World Weather plugin : " + saveLocation);
     }
 
     private void btnGetAuth_Click(object sender, EventArgs e)
@@ -199,6 +323,28 @@ namespace NetAtmo.NET
     private void btnGetMeasurements_Click(object sender, EventArgs e)
     {
       getMeasurements();
+    }
+
+    private void cbMeasurementsInterval_TextChanged(object sender, EventArgs e)
+    {
+      measurementInterval = int.Parse(cbMeasurementsInterval.Text);
+    }
+
+    private void cbMeasurementsInterval_TextUpdate(object sender, EventArgs e)
+    {
+      measurementInterval = int.Parse(cbMeasurementsInterval.Text);
+    }
+
+    private void cbUpdateMeasurementsBackground_CheckedChanged(object sender, EventArgs e)
+    {
+      if (cbUpdateMeasurementsBackground.Checked)
+      {
+        measuringManualHalt = false;
+      }
+      else
+      {
+        measuringManualHalt = true;
+      }
     }
   }
 }

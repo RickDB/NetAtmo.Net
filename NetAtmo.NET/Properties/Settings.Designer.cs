@@ -94,5 +94,101 @@ namespace NetAtmo.NET.Properties {
                 this["DeviceID"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Longtitude {
+            get {
+                return ((string)(this["Longtitude"]));
+            }
+            set {
+                this["Longtitude"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Latitude {
+            get {
+                return ((string)(this["Latitude"]));
+            }
+            set {
+                this["Latitude"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Altitude {
+            get {
+                return ((string)(this["Altitude"]));
+            }
+            set {
+                this["Altitude"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Country {
+            get {
+                return ((string)(this["Country"]));
+            }
+            set {
+                this["Country"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TimeZone {
+            get {
+                return ((string)(this["TimeZone"]));
+            }
+            set {
+                this["TimeZone"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ModuleID {
+            get {
+                return ((string)(this["ModuleID"]));
+            }
+            set {
+                this["ModuleID"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("300")]
+        public string MeasurementsInterval {
+            get {
+                return ((string)(this["MeasurementsInterval"]));
+            }
+            set {
+                this["MeasurementsInterval"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UpdateMeasurementsBackground {
+            get {
+                return ((bool)(this["UpdateMeasurementsBackground"]));
+            }
+            set {
+                this["UpdateMeasurementsBackground"] = value;
+            }
+        }
     }
 }
